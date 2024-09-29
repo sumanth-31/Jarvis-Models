@@ -5,19 +5,21 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import r2_score
+from sklearn.metrics import r2_score, accuracy_score
 
 
 class UnivariateRegression(ABC):
     weights = None
     n_iterations = None
     learning_rate = None
+    dataset = None
     input_features = None
     target_feature = None
     m = None
     n = None
     def __init__(self, dataset , n_iterations = 1000, learning_rate = 0.01, weights = None):
-        pre_processed_dataset = self.pre_process(dataset)
+        self.dataset = dataset
+        pre_processed_dataset = self.pre_process(self.dataset.copy())
         self.n_iterations = n_iterations
         self.learning_rate = learning_rate
         self.input_features = pre_processed_dataset.iloc[:, :-1].copy()
@@ -26,9 +28,9 @@ class UnivariateRegression(ABC):
         self.n = self.input_features.shape[1]
         if (self.weights == None):
             self.weights = pd.Series([0]*self.n)
-        print('input_features shape = ', self.input_features.shape)
-        print('target features shape = ', self.target_feature.shape)
-        print('weights shape = ', self.weights.shape)
+        print('input_features = ', self.input_features)
+        print('target features = ', self.target_feature)
+        print('weights = ', self.weights)
     def pre_process(self, dataset):
         dataset.dropna(inplace = True)
         dataset.reset_index(drop=True, inplace=True)
@@ -61,16 +63,18 @@ class UnivariateRegression(ABC):
             for j in range(self.n):
                 gradient = self.calculate_gradient(j)
                 self.update_weight(j, gradient)
-                if (verbose_costs):
-                    cost = self.calculate_cost()
-                    costs.append(cost)
-                    print('Cost after', i, ' iterations = ', cost)
-                print('Weights after', i, ' iterations = ', self.weights)
+            if (verbose_costs):
+                cost = self.calculate_cost()
+                costs.append(cost)
+                print('Cost after', i, ' iterations = ', cost)
+            print('Weights after', i, ' iterations = ', self.weights)
         if (verbose_costs):
             plt.plot(range(len(costs)), costs)
         return self.weights
     def calculate_accuracy_r2(self, y_actual, y_predicted):
         return r2_score(y_actual, y_predicted)
+    def calculate_accuracy_classification(self, y_actual, y_predicted):
+        return accuracy_score(y_actual, y_predicted)
     def predict(self, input_features):
         input_features_with_intercept = pd.concat([pd.Series([1]*input_features.shape[0]), input_features], axis = 1)
         return self.calculate_hypothesis(input_features_with_intercept)
